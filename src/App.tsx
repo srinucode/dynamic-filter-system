@@ -3,24 +3,64 @@ import {
   Button,
   Container,
   CssBaseline,
+  FormControl,
   InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { Download, Search } from "lucide-react";
+import { useState } from "react";
 import { DataTable } from "./components/DataTable";
 import { DynamicFilter } from "./components/DynamicFilter";
-import { employeeColumns } from "./features/employees/employee.columns";
 import {
-  employeeFilterConfig,
-  employeeSearchableFields,
-} from "./features/employees/employee.config";
-import { employeeData } from "./features/employees/employee.data";
+  employeeTableDefinition,
+  transactionTableDefinition,
+  type DatasetKey,
+  type TableDefinition,
+} from "./app/tableDefinitions";
 import { useFilters } from "./hooks/useFilters";
 import { exportToCsv } from "./lib/utils/exportCsv";
 
 function App() {
+  const [selectedDataset, setSelectedDataset] =
+    useState<DatasetKey>("employees");
+
+  return (
+    <>
+      <CssBaseline />
+
+      {selectedDataset === "employees" ? (
+        <DatasetWorkspace
+          selectedDataset={selectedDataset}
+          onDatasetChange={setSelectedDataset}
+          definition={employeeTableDefinition}
+        />
+      ) : (
+        <DatasetWorkspace
+          selectedDataset={selectedDataset}
+          onDatasetChange={setSelectedDataset}
+          definition={transactionTableDefinition}
+        />
+      )}
+    </>
+  );
+}
+
+interface DatasetWorkspaceProps<T extends object> {
+  selectedDataset: DatasetKey;
+  onDatasetChange: (dataset: DatasetKey) => void;
+  definition: TableDefinition<T>;
+}
+
+function DatasetWorkspace<T extends object>({
+  selectedDataset,
+  onDatasetChange,
+  definition,
+}: DatasetWorkspaceProps<T>) {
   const {
     searchQuery,
     setSearchQuery,
@@ -33,62 +73,56 @@ function App() {
     removeFilter,
     clearFilters,
   } = useFilters({
-    data: employeeData,
-    filterFields: employeeFilterConfig,
-    searchableFields: employeeSearchableFields,
-    storageKey: "employee-filter-state",
+    data: definition.data,
+    filterFields: definition.filterConfig,
+    searchableFields: definition.searchableFields,
+    storageKey: definition.storageKey,
   });
 
   function handleExportCsv() {
-    exportToCsv("employee-records.csv", filteredData, [
-      { key: "id", header: "ID" },
-      { key: "name", header: "Name" },
-      { key: "email", header: "Email" },
-      { key: "department", header: "Department" },
-      { key: "role", header: "Role" },
-      { key: "salary", header: "Salary" },
-      { key: "joinDate", header: "Join Date" },
-      {
-        key: "isActive",
-        header: "Status",
-        renderValue: (employee) => (employee.isActive ? "Active" : "Inactive"),
-      },
-      {
-        key: "skills",
-        header: "Skills",
-        renderValue: (employee) => employee.skills.join("; "),
-      },
-      { key: "address.city", header: "City" },
-      { key: "address.country", header: "Country" },
-      { key: "projects", header: "Projects" },
-      { key: "performanceRating", header: "Performance Rating" },
-    ]);
+    exportToCsv(
+      definition.exportFileName,
+      filteredData,
+      definition.csvColumns
+    );
   }
 
   return (
-    <>
-      <CssBaseline />
+    <Container maxWidth="xl">
+      <Box sx={{ py: 4 }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            mb: 3,
+          }}
+          spacing={2}
+        >
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }} gutterBottom>
+              Dynamic Filter Component System
+            </Typography>
 
-      <Container maxWidth="xl">
-        <Box sx={{ py: 4 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            sx={{
-              justifyContent: "space-between",
-              alignItems: { xs: "flex-start", md: "center" },
-              mb: 3,
-            }}
-          >
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700 }} gutterBottom>
-                Dynamic Filter Component System
-              </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {definition.description}
+            </Typography>
+          </Box>
 
-              <Typography variant="body1" color="text.secondary">
-                Reusable React TypeScript filtering system for employee data.
-              </Typography>
-            </Box>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>Dataset</InputLabel>
+              <Select
+                label="Dataset"
+                value={selectedDataset}
+                onChange={(event) =>
+                  onDatasetChange(event.target.value as DatasetKey)
+                }
+              >
+                <MenuItem value="employees">Employees</MenuItem>
+                <MenuItem value="transactions">Transactions</MenuItem>
+              </Select>
+            </FormControl>
 
             <Button
               variant="outlined"
@@ -99,45 +133,46 @@ function App() {
               Export CSV
             </Button>
           </Stack>
+        </Stack>
 
-          <Box sx={{ mb: 3 }}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search by name, email, department, role, skill, city, or country..."
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search size={18} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          </Box>
-
-          <DynamicFilter
-            fields={employeeFilterConfig}
-            filters={filters}
-            onAddFilter={addFilter}
-            onUpdateFilter={updateFilter}
-            onRemoveFilter={removeFilter}
-            onClearFilters={clearFilters}
-          />
-
-          <DataTable
-            data={filteredData}
-            columns={employeeColumns}
-            totalCount={totalCount}
-            filteredCount={filteredCount}
-            emptyMessage="No employees match your filters."
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder={definition.searchPlaceholder}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={18} />
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
         </Box>
-      </Container>
-    </>
+
+        <DynamicFilter
+          fields={definition.filterConfig}
+          filters={filters}
+          onAddFilter={addFilter}
+          onUpdateFilter={updateFilter}
+          onRemoveFilter={removeFilter}
+          onClearFilters={clearFilters}
+        />
+
+        <DataTable
+          title={definition.title}
+          data={filteredData}
+          columns={definition.columns}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+          emptyMessage={definition.emptyMessage}
+        />
+      </Box>
+    </Container>
   );
 }
 

@@ -26,6 +26,7 @@ interface SortState {
 }
 
 export function DataTable<T extends object>({
+  title = "Records",
   data,
   columns,
   totalCount,
@@ -81,7 +82,7 @@ export function DataTable<T extends object>({
         }}
       >
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Employee Records
+          {title}
         </Typography>
 
         <Typography variant="body2" color="text.secondary">

@@ -17,3 +17,11 @@ export interface DataTableProps<T extends object> {
   filteredCount: number;
   emptyMessage?: string;
 }
+export interface DataTableProps<T extends object> {
+  title?: string;
+  data: T[];
+  columns: DataTableColumn<T>[];
+  totalCount: number;
+  filteredCount: number;
+  emptyMessage?: string;
+}

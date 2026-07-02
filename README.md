@@ -205,6 +205,186 @@ Then pass the configuration to the reusable filter component:
   onClearFilters={clearFilters}
 />
 ```
+---
+
+## Available Datasets
+
+The application currently demonstrates the reusable filter system with two different datasets:
+
+| Dataset | Purpose | Example Fields |
+|---|---|---|
+| Employees | Employee management style table | name, department, salary, skills, address.city |
+| Transactions | Payment transaction style table | transactionId, amount, paymentMethod, isRefunded, location.city |
+
+Both datasets use the same reusable components:
+
+```txt
+DynamicFilter
+DataTable
+useFilters
+filterEngine
+globalSearch
+```
+
+Only the configuration, columns, and data are changed.
+
+---
+
+## How to Add a New Dataset
+
+To configure a new table, create a new folder inside `src/features`.
+
+Example:
+
+```txt
+src/features/orders/
+```
+
+Create these files:
+
+```txt
+order.types.ts
+order.data.ts
+order.config.ts
+order.columns.tsx
+```
+
+### 1. Define the data type
+
+```ts
+export interface Order {
+  id: number;
+  orderId: string;
+  customerName: string;
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  isPaid: boolean;
+  items: string[];
+  shippingAddress: {
+    city: string;
+    country: string;
+  };
+}
+```
+
+### 2. Define filter configuration
+
+```ts
+export const orderFilterConfig = [
+  {
+    key: "orderId",
+    label: "Order ID",
+    type: "text",
+  },
+  {
+    key: "totalAmount",
+    label: "Total Amount",
+    type: "currency",
+  },
+  {
+    key: "status",
+    label: "Status",
+    type: "singleSelect",
+    options: [
+      { label: "Pending", value: "Pending" },
+      { label: "Delivered", value: "Delivered" },
+      { label: "Cancelled", value: "Cancelled" },
+    ],
+  },
+  {
+    key: "isPaid",
+    label: "Paid",
+    type: "boolean",
+  },
+  {
+    key: "items",
+    label: "Items",
+    type: "multiSelect",
+    options: [
+      { label: "Laptop", value: "Laptop" },
+      { label: "Phone", value: "Phone" },
+    ],
+  },
+  {
+    key: "shippingAddress.city",
+    label: "City",
+    type: "singleSelect",
+    options: [
+      { label: "Bangalore", value: "Bangalore" },
+      { label: "New York", value: "New York" },
+    ],
+  },
+];
+```
+
+### 3. Define searchable fields
+
+```ts
+export const orderSearchableFields = [
+  { key: "orderId" },
+  { key: "customerName" },
+  { key: "status" },
+  { key: "items" },
+  { key: "shippingAddress.city" },
+  { key: "shippingAddress.country" },
+];
+```
+
+### 4. Define table columns
+
+```tsx
+export const orderColumns = [
+  {
+    key: "orderId",
+    header: "Order ID",
+    sortable: true,
+  },
+  {
+    key: "customerName",
+    header: "Customer",
+    sortable: true,
+  },
+  {
+    key: "totalAmount",
+    header: "Total Amount",
+    sortable: true,
+  },
+  {
+    key: "status",
+    header: "Status",
+    sortable: true,
+  },
+  {
+    key: "shippingAddress.city",
+    header: "City",
+    sortable: true,
+  },
+];
+```
+
+### 5. Register the dataset
+
+Add the new table definition inside:
+
+```txt
+src/app/tableDefinitions.ts
+```
+
+Each dataset provides:
+
+```txt
+data
+columns
+filterConfig
+searchableFields
+csvColumns
+storageKey
+exportFileName
+```
+
+After registration, the same `DynamicFilter`, `DataTable`, and `useFilters` logic will work without internal component changes.
+
 
 ---
 
