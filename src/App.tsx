@@ -24,10 +24,12 @@ import {
 } from "./app/tableDefinitions";
 import { useFilters } from "./hooks/useFilters";
 import { exportToCsv } from "./lib/utils/exportCsv";
+import { ActiveFilterChips } from "./components/DynamicFilter/ActiveFilterChips";
 
 function App() {
   const [selectedDataset, setSelectedDataset] =
     useState<DatasetKey>("employees");
+    
 
   return (
     <>
@@ -72,6 +74,7 @@ function DatasetWorkspace<T extends object>({
     updateFilter,
     removeFilter,
     clearFilters,
+    resetAll,
   } = useFilters({
     data: definition.data,
     filterFields: definition.filterConfig,
@@ -132,6 +135,14 @@ function DatasetWorkspace<T extends object>({
             >
               Export CSV
             </Button>
+            <Button
+  variant="outlined"
+  color="error"
+  onClick={resetAll}
+  disabled={!searchQuery && filters.length === 0}
+>
+  Reset All
+</Button>
           </Stack>
         </Stack>
 
@@ -152,7 +163,15 @@ function DatasetWorkspace<T extends object>({
               },
             }}
           />
+          <Typography variant="body2" color="text.secondary">
+  Active filters: {filters.length} | Showing {filteredCount} of {totalCount}
+</Typography>
         </Box>
+        <ActiveFilterChips
+  filters={filters}
+  fields={definition.filterConfig}
+  onRemoveFilter={removeFilter}
+/>
 
         <DynamicFilter
           fields={definition.filterConfig}

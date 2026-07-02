@@ -6,6 +6,7 @@ import type {
   FilterFieldConfig,
 } from "../lib/filtering/filter.types";
 import type { SearchField } from "../lib/filtering/globalSearch";
+import { useDebouncedValue } from "./useDebouncedValue";
 
 interface UseFiltersParams<T extends object> {
   data: T[];
@@ -34,7 +35,7 @@ export function useFilters<T extends object>({
   const [filters, setFilters] = useState<FilterCondition[]>(
     persistedState?.filters ?? []
   );
-
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   /**
    * Persist search and filters so the user does not lose their filtering
    * state after refreshing the page.
@@ -62,8 +63,8 @@ export function useFilters<T extends object>({
    * Final output contains only Engineering employees that also match "react".
    */
   const searchedData = useMemo(() => {
-    return applyGlobalSearch(data, searchQuery, searchableFields);
-  }, [data, searchQuery, searchableFields]);
+    return applyGlobalSearch(data, debouncedSearchQuery, searchableFields);
+  }, [data, debouncedSearchQuery, searchableFields]);
 
   const filteredData = useMemo(() => {
     return applyFilters(searchedData, filters, filterFields);
